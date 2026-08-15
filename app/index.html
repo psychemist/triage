@@ -59,32 +59,6 @@
       </section>
     </div>
 
-    <details class="panel ai-panel" id="ai-panel">
-      <summary>
-        <span class="microlabel">AI signal detection — optional</span>
-        <span class="ai-state" id="ai-state">built-in detector active</span>
-      </summary>
-      <p class="ai-blurb">The built-in detector matches known phrasings. AI mode has an open model read every note and
-        report the <em>same named signals</em> — so paraphrases like "we have sign-off on spend" still count as 
-        <em>budget approved</em>. Weights, tiers, and explanations don't change. <strong>All three models run free</strong>
-        on a free-tier key kept in memory only, never stored. OpenRouter keys call straight from the browser and work anywhere;
-        NVIDIA keys need the Docker self-host, which proxies NVIDIA's CORS-blocked API.</p>
-      <div class="ai-controls">
-        <input type="password" id="ai-key" placeholder="OpenRouter (sk-or-…) or NVIDIA (nvapi-…) API key" autocomplete="off" spellcheck="false">
-        <select id="ai-model" aria-label="Model">
-          <option value="nvidia/nemotron-3-super-120b-a12b:free">Nemotron 3 Super — recommended (free)</option>
-          <option value="nvidia/nemotron-3-nano-30b-a3b:free">Nemotron 3 Nano — fastest (free)</option>
-          <option value="nvidia/nemotron-3-ultra-550b-a55b:free">Nemotron 3 Ultra — largest, slowest (free)</option>
-        </select>
-        <button class="primary" id="btn-ai">Re-score with AI</button>
-      </div>
-      <div class="ai-progress" id="ai-progress" hidden>
-        <div class="sigmeter"><i id="ai-bar" style="width:0%"></i></div>
-        <span id="ai-progress-text"></span>
-      </div>
-      <div class="ai-error" id="ai-error" hidden></div>
-    </details>
-
     <div class="controls">
       <div class="tabs" id="tabs" role="tablist"></div>
       <input id="search" type="search" placeholder="Search name, company, title, notes…" aria-label="Search leads">
@@ -122,7 +96,6 @@
 
 <script src="demo-data.js"></script>
 <script src="engine.js"></script>
-<script src="ai.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -14,8 +14,6 @@
   const TIERS = ["CONTACT_NOW", "NURTURE", "DISQUALIFY"];
 
   let state = null, filterTier = "ALL", query = "", showAll = false, sourceName = "";
-  let scoringMode = "regex"; // "regex" | "ai"
-  let aiCoverage = null;     // {covered, total} once AI mode has run
 
   /* ---------------- rendering ---------------- */
 
@@ -25,13 +23,7 @@
     for (const t of TIERS) counts[t] = leads.filter(l => l.tier === t).length;
     const total = leads.length || 1;
 
-    $("runmeta").textContent = `${sourceName} · ${inputRows} rows · ${leads.length} leads scored` +
-      (scoringMode === "ai" ? " · AI-assisted" : "");
-    $("ai-state").textContent =
-      scoringMode !== "ai" ? "built-in detector active"
-      : aiCoverage && aiCoverage.covered < aiCoverage.total
-        ? `AI detector active ✓ — ${aiCoverage.covered} of ${aiCoverage.total} leads; the rest kept the built-in result`
-        : "AI detector active ✓";
+    $("runmeta").textContent = `${sourceName} · ${inputRows} rows · ${leads.length} leads scored`;
 
     $("hero-n").textContent = counts.CONTACT_NOW;
     $("hero-sub").textContent =
@@ -153,50 +145,12 @@
   function load(rawRows, name) {
     sourceName = name;
     state = E.runPipeline(rawRows);
-    filterTier = "ALL"; query = ""; showAll = false; scoringMode = "regex"; aiCoverage = null;
+    filterTier = "ALL"; query = ""; showAll = false;
     $("search").value = "";
-    $("ai-error").hidden = true;
     render();
     window.scrollTo({ top: 0 });
   }
 
-  /* ---------------- AI mode ---------------- */
-
-  $("btn-ai").onclick = async () => {
-    if (!state) return;
-    const key = $("ai-key").value.trim();
-    const errBox = $("ai-error");
-    errBox.hidden = true;
-    if (!key) { errBox.textContent = "Paste an OpenRouter (sk-or-…) or NVIDIA (nvapi-…) API key first."; errBox.hidden = false; return; }
-
-    const btn = $("btn-ai");
-    btn.disabled = true;
-    $("ai-progress").hidden = false;
-    $("ai-bar").style.width = "0%";
-    $("ai-progress-text").textContent = `Classifying 0 / ${state.leads.length} leads…`;
-    try {
-      const detections = await window.TriageAI.detectWithAI(
-        key, $("ai-model").value, state.leads,
-        (done, total) => {
-          $("ai-bar").style.width = (done / total * 100) + "%";
-          $("ai-progress-text").textContent = `Classifying ${done} / ${total} leads…`;
-        });
-      const covered = detections.filter(Boolean).length;
-      if (!covered)
-        throw new Error("The model returned nothing usable for any batch. Try a different model, or keep the built-in detector.");
-      E.rescoreWithDetections(state.leads, detections);
-      scoringMode = "ai";
-      aiCoverage = { covered, total: state.leads.length };
-      showAll = false;
-      render();
-    } catch (e) {
-      errBox.textContent = e.message;
-      errBox.hidden = false;
-    } finally {
-      btn.disabled = false;
-      $("ai-progress").hidden = true;
-    }
-  };
   function loadFile(f) { f.text().then(t => load(E.parseCSV(t), f.name)); }
 
   $("btn-demo").onclick = () => load(window.DEMO_DATA, "cohort_3_leads.csv");

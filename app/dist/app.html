@@ -208,38 +208,6 @@ button:focus-visible, input:focus-visible, tr:focus-visible { outline: 2px solid
 .waterfall .wf.flag .k { color: var(--warn-text); }
 .waterfall .wf.flag .v { color: var(--warn-text); }
 
-/* ------------------------------------------------ AI panel */
-
-.ai-panel { margin-bottom: 18px; padding: 0; }
-.ai-panel summary {
-  display: flex; align-items: baseline; gap: 12px; cursor: pointer;
-  padding: 14px 18px; list-style: none;
-}
-.ai-panel summary::-webkit-details-marker { display: none; }
-.ai-panel summary::before { content: "▸"; color: var(--muted); font-size: 12px; }
-.ai-panel[open] summary::before { content: "▾"; }
-.ai-panel summary .microlabel { margin: 0; }
-.ai-state { margin-left: auto; font-size: 12.5px; color: var(--ink-2); }
-.ai-blurb { margin: 0 18px 14px; color: var(--ink-2); font-size: 13.5px; max-width: 78ch; }
-.ai-controls { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 18px 16px; }
-#ai-key {
-  flex: 2; min-width: 220px; padding: 9px 12px; border-radius: 8px;
-  border: 1px solid var(--ring); background: var(--page); color: var(--ink);
-  font: 13px/1 ui-monospace, Menlo, monospace;
-}
-#ai-model {
-  flex: 1; min-width: 220px; padding: 9px 10px; border-radius: 8px;
-  border: 1px solid var(--ring); background: var(--surface); color: var(--ink);
-  font: 600 13.5px system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-.ai-progress { display: flex; align-items: center; gap: 12px; padding: 0 18px 16px; }
-.ai-progress .sigmeter { flex: 1; margin: 0; }
-.ai-progress span { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.ai-error {
-  margin: 0 18px 16px; padding: 9px 12px; border-radius: 8px;
-  background: var(--dq-wash); color: var(--crit-text); font-size: 13px; font-weight: 600;
-}
-
 /* ------------------------------------------------ controls + table */
 
 .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
@@ -396,32 +364,6 @@ tr.detail td { background: var(--inset); font-size: 13px; padding: 4px 16px 16px
       </section>
     </div>
 
-    <details class="panel ai-panel" id="ai-panel">
-      <summary>
-        <span class="microlabel">AI signal detection — optional</span>
-        <span class="ai-state" id="ai-state">built-in detector active</span>
-      </summary>
-      <p class="ai-blurb">The built-in detector matches known phrasings. AI mode has an open model read every note and
-        report the <em>same named signals</em> — so paraphrases like "we have sign-off on spend" still count as 
-        <em>budget approved</em>. Weights, tiers, and explanations don't change. <strong>All three models run free</strong>
-        on a free-tier key kept in memory only, never stored. OpenRouter keys call straight from the browser and work anywhere;
-        NVIDIA keys need the Docker self-host, which proxies NVIDIA's CORS-blocked API.</p>
-      <div class="ai-controls">
-        <input type="password" id="ai-key" placeholder="OpenRouter (sk-or-…) or NVIDIA (nvapi-…) API key" autocomplete="off" spellcheck="false">
-        <select id="ai-model" aria-label="Model">
-          <option value="nvidia/nemotron-3-super-120b-a12b:free">Nemotron 3 Super — recommended (free)</option>
-          <option value="nvidia/nemotron-3-nano-30b-a3b:free">Nemotron 3 Nano — fastest (free)</option>
-          <option value="nvidia/nemotron-3-ultra-550b-a55b:free">Nemotron 3 Ultra — largest, slowest (free)</option>
-        </select>
-        <button class="primary" id="btn-ai">Re-score with AI</button>
-      </div>
-      <div class="ai-progress" id="ai-progress" hidden>
-        <div class="sigmeter"><i id="ai-bar" style="width:0%"></i></div>
-        <span id="ai-progress-text"></span>
-      </div>
-      <div class="ai-error" id="ai-error" hidden></div>
-    </details>
-
     <div class="controls">
       <div class="tabs" id="tabs" role="tablist"></div>
       <input id="search" type="search" placeholder="Search name, company, title, notes…" aria-label="Search leads">
@@ -470,38 +412,118 @@ window.DEMO_DATA = [{"lead_id":"L-1369","created":"06/28/2024","name":"Gbenga","
    * The single source of truth for qualification signals. */
 
   const GATES = {
-    "spam":              [/won \$/, /click here to claim/, /smm panel/, /buy followers/, /backlinks/, /bulk email blasting/, /offshore dev/, /dm for rates/],
-    "job seeker":        [/looking for a role/, /attaching my cv/, /are you hiring/, /join your team/],
-    "recruiter":         [/place candidates/, /devs on our bench/],
-    "student / learner": [/\bstudent\b/, /bootcamp grad/, /university project/, /free (template|material|resources)/, /just learning/],
-    "press / VC":        [/journalist/, /looking for a quote/, /\bvc here\b/, /not a (direct )?buyer/],
-    "competitor":        [/competing automation agency/, /benchmark/, /fellow agency owner/, /researching the market/, /we do similar work/],
-    "test row":          [/test entry/, /test test ignore/, /newsletter signup/],
-    "low budget":    [/can't really pay/, /tiny budget/, /budget way below range/],
+    "spam": [
+      /won \$|you have won|claim your (prize|reward)|congratulations,? you/,
+      /click here|limited time offer|act now|make money fast|work from home/,
+      /smm panel|buy (followers|likes|traffic)|cheap traffic|social media boost/,
+      /backlinks|high.?da links|guaranteed (rank|first page)|rank #?\d+ guaranteed/,
+      /bulk email blasting|mass mailer|email blast service|scraped (list|leads) for sale/,
+      /offshore (dev|team|developers)|dedicated developers at|staff augmentation|\$\d+\/hr/,
+      /dm for rates|crypto|bitcoin|forex|lottery|inheritance|wire transfer/,
+    ],
+    "job seeker": [
+      /looking for a (role|job|position)|seeking (a )?(role|position|employment)|open to work/,
+      /attaching my (cv|resume)|my (cv|resume) is attached|resume attached|here'?s my cv/,
+      /are you hiring|any (openings|vacancies)|join your team|apply for a (job|role)/,
+      /hire me|available for hire|looking for work|internship/,
+    ],
+    "recruiter": [
+      /place candidates|candidates for you|our bench|devs on (our|the) bench/,
+      /staffing agency|recruiting firm|headhunt|talent pool|we supply (developers|talent)/,
+    ],
+    "student / learner": [
+      /\bstudent\b|bootcamp grad|final year|freshman|undergrad|postgrad/,
+      /university project|school project|class project|thesis|dissertation|coursework|academic research/,
+      /free (template|material|materials|resources|course|guide)|any free/,
+      /just learning|learning purposes|teach me|mentor me|how did you (build|make)|share how you built/,
+    ],
+    "press / VC": [
+      /journalist|reporter|writing (an article|a piece|a story)|press inquiry|media inquiry/,
+      /looking for a quote|for our publication|blog post about|feature you|on our podcast/,
+      /\bvc here\b|venture capital|angel investor|portfolio compan|due diligence/,
+      /not a (direct )?buyer|not a client|not looking to buy/,
+    ],
+    "competitor": [
+      /competing (automation )?agency|competitor|rival agency|we run a similar|also an automation agency/,
+      /benchmark|fellow agency owner|researching the market|market research|scoping the competition/,
+      /we do similar work|we offer the same|curious how you price for comparison/,
+    ],
+    "test row": [
+      /test entry|test test|qa test|please ignore|ignore this|dummy (data|entry|row)/,
+      /sample row|placeholder|lorem ipsum|^\s*(test|asdf|xxx)\s*$/,
+      /newsletter signup|mailing list signup|subscribed by mistake/,
+    ],
+    // Affordability gate. Deliberately excludes "no budget *yet*" phrasings —
+    // those are a timing problem, not a fit problem, and NURTURE_FLOOR owns them.
+    "low budget": [
+      /can'?t really pay|can ?not afford|can'?t afford|too expensive for us/,
+      /tiny budget|shoestring|no budget at all|zero budget|budget way below range/,
+      /out of our (price )?range|below our range|way out of budget/,
+      /looking for (something )?free|free (option|version|tier|plan)|pro bono|only if it'?s free/,
+    ],
   };
 
   const SIGNALS = {
-    budget_approved:      { pts: 20,  label: "budget approved",       re: /budget approved/ },
-    urgent_timeline:      { pts: 18,  label: "urgent timeline",       re: /asap|move fast|start this month|decision this month|pilot in the next|in \d+ weeks|priority for the quarter/ },
-    acute_pain:           { pts: 15,  label: "acute pain named",      re: /eating our week/ },
-    wants_full_automation:{ pts: 12,  label: "wants full automation", re: /end to end/ },
-    decision_maker:       { pts: 10,  label: "decision-maker",        re: /decision is mine|i make the call|my priority to solve/ },
-    active_evaluation:    { pts: 8,   label: "active evaluation",     re: /comparing a few options/ },
-    decision_month:       { pts: 6,   label: "decision ~1 month",     re: /decision in about a month/ },
-    has_some_budget:      { pts: 5,   label: "has some budget",       re: /have some budget|budgeted/ },
-    named_workflow:       { pts: 4,   label: "named a workflow",      re: /automat/ },
-    no_clear_authority:   { pts: -1,  label: "no clear authority",    re: /who signs off|loop in the team/ },
-    budget_not_committed: { pts: -2,  label: "budget not committed",  re: /budget not locked|won'?t share budget|wont share budget|no real budget/ },
-    price_sensitive:      { pts: -4,  label: "price sensitive",       re: /price sensitive/ },
-    vague_scope:          { pts: -6,  label: "vague on scope",        re: /not totally sure what we need|vague on scope|not sure what we need/ },
-    deferred_interest:    { pts: -10, label: "deferred interest",     re: /maybe later/ },
+    budget_approved: { pts: 20, label: "budget approved", re:
+      /budget (is )?approved|approved budget|budget (secured|confirmed|in place|allocated)|allocated budget|we have the budget|funding (is )?approved|signed off on (the )?budget|sign.?off on (spend|budget)|have sign.?off/ },
+    urgent_timeline: { pts: 18, label: "urgent timeline", re:
+      /asap|urgent|right away|immediately|move fast|moving fast|start (this|next) month|start now|decision this month|pilot in the next|in \d+ weeks|priority for the quarter|this quarter|time.sensitive|need this (done )?(by|before)|kick.?off (this|next) month/ },
+    acute_pain: { pts: 15, label: "acute pain named", re:
+      /eating (up )?(our|the) (week|time|days|hours)|wasting (hours|time|days)|burning (hours|time)|takes (us )?(hours|days)|too much time|time.consuming|tedious|manual(ly)?.{0,25}(every|each) (day|week)|drowning in|swamped|bottleneck|can'?t keep up|falling behind|nightmare|painful/ },
+    wants_full_automation: { pts: 12, label: "wants full automation", re:
+      /end.to.end|fully automated?|full automation|completely automated?|hands.off|automate the whole|entire (process|workflow)|from start to finish|without (any )?manual|no manual/ },
+    decision_maker: { pts: 10, label: "decision-maker", re:
+      /decision is mine|i make the call|my priority to solve|my decision|i decide|i sign off|i can approve|final say|i own (this|the budget)|i'?m the (owner|founder|ceo|decision.maker)/ },
+    active_evaluation: { pts: 8, label: "active evaluation", re:
+      /comparing (a few |several |multiple )?(options|vendors|tools|providers|solutions)|evaluating (a few|several|options|vendors|tools)|shortlist|looking at alternatives|getting quotes|\brfp\b|request for proposal|in talks with|demos? with/ },
+    decision_month: { pts: 6, label: "decision ~1 month", re:
+      /decision (in|within) (about )?a (month|few weeks)|deciding (this|next) month|decide (in|within).{0,12}(month|weeks)|timeline is.{0,15}month/ },
+    has_some_budget: { pts: 5, label: "has some budget", re:
+      /have some budget|some budget|budgeted|budget exists|funds available|money set aside|allocated some/ },
+    named_workflow: { pts: 4, label: "named a workflow", re:
+      /automat|streamline|workflow|manual process|copy.?past|data entry|integrat|sync (between|with)/ },
+    no_clear_authority: { pts: -1, label: "no clear authority", re:
+      /who signs off|loop in the team|need to (check|ask|run it by|consult)|not sure who (decides|signs)|team decision|committee|get approval|internal buy.?in|my (boss|manager|partner) (would|will|needs)/ },
+    // Evasive or undecided about spend — NOT "no budget yet", which is a timing
+    // signal handled by NURTURE_FLOOR rather than a penalty.
+    budget_not_committed: { pts: -2, label: "budget not committed", re:
+      /budget not locked|won'?t share budget|wont share budget|depends what you can do|budget (is )?tbd|haven'?t (set|decided).{0,12}budget|budget (undecided|not set|not decided)|need to figure out budget/ },
+    price_sensitive: { pts: -4, label: "price sensitive", re:
+      /price.sensitive|cost.conscious|cheapest|lowest price|budget.friendly|what do you charge|how much (does it|do you) cost|discount|negotiate on price/ },
+    vague_scope: { pts: -6, label: "vague on scope", re:
+      /not totally sure what we need|not sure what (we need|exactly)|vague on scope|don'?t know what we (need|want)|still figuring (it )?out|just exploring|not sure where to start|open to ideas|early research/ },
+    deferred_interest: { pts: -10, label: "deferred interest", re:
+      /maybe later|later this year|next year|not right now|not at the moment|circle back|revisit (in|next|later)|touch base (in|later)|down the (road|line)|in a few months|keep me posted/ },
   };
+
+  /* Leads that say "not now, but plausibly later" — pre-revenue, early-stage,
+   * or explicitly deferring on budget while showing promise. These are a timing
+   * problem, not a fit problem, so they are never disqualified: the floor
+   * guarantees at least Nurture without inflating their score, which keeps the
+   * ranking inside Nurture honest. */
+  const NURTURE_FLOOR = [
+    /early.stage|early startup|very early|early days|just (got )?started|starting out|new (agency|business)/,
+    /pre.?revenue|pre.?seed|bootstrapp?ed|no real budget yet|budget (next|by next) (quarter|year)/,
+    /might grow|but sharp|small but growing|growing fast|scaling up|plan to scale/,
+    /too early (for us|right now)|not ready (yet|to buy)|revisit when we (grow|scale)/,
+  ];
+
+  /* The floor rescues a lead from the affordability gate only — "no budget yet"
+   * is forgivable, being a recruiter or a competitor is not. */
+  const RESCUABLE_GATES = new Set(["low budget"]);
+
+  function hasNurtureFloor(notes) {
+    return NURTURE_FLOOR.some(re => re.test(notes));
+  }
 
   /* Regex detector
    * Returns { category, signals: [names] }; category "prospect" means scoreable. */
   function detectSignals(notes) {
     for (const [category, pats] of Object.entries(GATES)) {
-      if (pats.some(p => p.test(notes))) return { category, signals: [] };
+      if (pats.some(p => p.test(notes))) {
+        if (RESCUABLE_GATES.has(category) && hasNurtureFloor(notes)) continue;
+        return { category, signals: [] };
+      }
     }
     return {
       category: "prospect",
@@ -560,15 +582,17 @@ window.DEMO_DATA = [{"lead_id":"L-1369","created":"06/28/2024","name":"Gbenga","
   /* Reasons are structured: { pts, label, group } — group is "intent" | "fit" | "gate".
    * pts === null means an informational flag with no numeric weight. */
 
-  /* Score a lead from a detection result ({category, signals}) — the shared
-   * back half used by both detectors. `via` tags reasons with their detector. */
-  function scoreFromDetection(lead, detection, via) {
+  /* Score a lead from a detection result ({category, signals}). */
+  function scoreFromDetection(lead, detection) {
     const notes = (lead.notes || "").toLowerCase();
-    const tag = via === "ai" ? " (AI)" : "";
 
-    if (detection.category !== "prospect")
+    // Applied here as well as in detectSignals so the rescue holds however the
+    // category was produced.
+    const rescued = detection.category !== "prospect"
+      && RESCUABLE_GATES.has(detection.category) && hasNurtureFloor(notes);
+    if (detection.category !== "prospect" && !rescued)
       return { score: 0, intent: 0, fit: 0, tier: "DISQUALIFY", category: detection.category,
-               reasons: [{ pts: null, label: "hard disqualifier: " + detection.category + tag, group: "gate" }] };
+               reasons: [{ pts: null, label: "hard disqualifier: " + detection.category, group: "gate" }] };
     if (!notes.trim())
       return { score: 0, intent: 0, fit: 0, tier: "DISQUALIFY", category: "no information",
                reasons: [{ pts: null, label: "empty notes — nothing to qualify on", group: "gate" }] };
@@ -579,7 +603,7 @@ window.DEMO_DATA = [{"lead_id":"L-1369","created":"06/28/2024","name":"Gbenga","
       const s = SIGNALS[name];
       if (!s) continue;
       intent += s.pts;
-      reasons.push({ pts: s.pts, label: s.label + tag, group: "intent" });
+      reasons.push({ pts: s.pts, label: s.label, group: "intent" });
     }
     intent = Math.max(0, Math.min(60, intent));
 
@@ -607,25 +631,22 @@ window.DEMO_DATA = [{"lead_id":"L-1369","created":"06/28/2024","name":"Gbenga","
 
     const score = intent + fit;
     if (!lead.email) reasons.push({ pts: null, label: "no valid e-mail — capped at Nurture until fixed", group: "gate" });
-    const tier = (score >= 60 && lead.email) ? "CONTACT_NOW" : score >= 14 ? "NURTURE" : "DISQUALIFY";
+
+    // A floored lead can be lifted to Nurture but never demoted — the floor is a
+    // minimum, not an assignment, so a funded lead saying "we're growing fast"
+    // still reaches Contact now on its own score.
+    const floored = hasNurtureFloor(notes);
+    if (floored && score < 14)
+      reasons.push({ pts: null, label: "early-stage — kept for nurture rather than disqualified", group: "gate" });
+    const tier = (score >= 60 && lead.email) ? "CONTACT_NOW"
+               : (score >= 14 || floored)    ? "NURTURE"
+               : "DISQUALIFY";
     const category = tier === "DISQUALIFY" ? "low intent / poor fit" : "prospect";
     return { score, intent, fit, tier, category, reasons };
   }
 
   function scoreLead(lead) {
-    return scoreFromDetection(lead, detectSignals((lead.notes || "").toLowerCase()), "regex");
-  }
-
-  /* Re-score already-cleaned leads with external detections (the AI path).
-   * `detections[i]` pairs with `leads[i]`; missing entries keep the regex result. */
-  function rescoreWithDetections(leads, detections) {
-    leads.forEach((lead, i) => {
-      if (detections[i]) Object.assign(lead, scoreFromDetection(lead, detections[i], "ai"));
-    });
-    const order = { CONTACT_NOW: 0, NURTURE: 1, DISQUALIFY: 2 };
-    leads.sort((a, b) => order[a.tier] - order[b.tier] || b.score - a.score);
-    leads.forEach((l, i) => l.rank = i + 1);
-    return leads;
+    return scoreFromDetection(lead, detectSignals((lead.notes || "").toLowerCase()));
   }
 
   /* ---------------- CSV parsing + column auto-detection ---------------- */
@@ -720,273 +741,11 @@ window.DEMO_DATA = [{"lead_id":"L-1369","created":"06/28/2024","name":"Gbenga","
   }
 
   const api = { runPipeline, parseCSV, scoreLead, toCSV, reasonText,
-                detectSignals, scoreFromDetection, rescoreWithDetections,
+                detectSignals, scoreFromDetection,
                 SIGNALS, GATE_NAMES: Object.keys(GATES) };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.TriageEngine = api;
 })(typeof window !== "undefined" ? window : globalThis);
-</script>
-<script>
-/* Triage — optional AI signal detection.
- *
- * Swaps the regex detector for an open-model classifier — NVIDIA's Nemotron 3
- * (open weights): the model reads each lead's notes and returns which of the
- * engine's named signals are present. Scoring, weights, tiers, and
- * explanations stay in engine.js unchanged.
- *
- * The API key picks the route (kept in memory for the session only; never
- * stored or sent anywhere else):
- *   sk-or-…  OpenRouter — CORS-open, called straight from the browser; works
- *            self-hosted, on static hosts, or from a local file.
- *   nvapi-…  NVIDIA's own API (build.nvidia.com) — blocks browser CORS, so
- *            calls go through the same-origin /nim/ proxy that the Docker
- *            self-host (nginx) provides.
- *
- * Both routes run on free-tier keys. The ":free" suffix is an OpenRouter
- * convention for its no-cost pool; NVIDIA's API only knows the bare slug, so
- * the suffix is stripped on that route (build.nvidia.com is free by default).
- */
-(function (root) {
-  "use strict";
-  const E = root.TriageEngine;
-  const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-  const NIM_PROXY_URL = "/nim/v1/chat/completions";
-  // Long batches invite the model to truncate the list with a placeholder
-  // instead of finishing it; short ones stay well inside that failure mode.
-  const BATCH = 12;
-
-  const CATEGORIES = E.GATE_NAMES.concat(["prospect"]);
-  const SIGNAL_NAMES = Object.keys(E.SIGNALS);
-
-  const SIGNAL_MEANINGS = {
-    budget_approved: "budget is approved/committed, or they clearly have sign-off on spend",
-    urgent_timeline: "wants to start now/ASAP, decision this month, pilot in weeks, priority this quarter",
-    acute_pain: "names a concrete painful manual workflow that is costing them real time",
-    wants_full_automation: "wants the workflow automated end to end, not just advice",
-    decision_maker: "the writer personally owns the decision",
-    active_evaluation: "actively comparing vendors/options right now",
-    decision_month: "decision expected in roughly a month",
-    has_some_budget: "some budget exists or is earmarked, though not fully committed",
-    named_workflow: "describes a specific workflow they want automated",
-    no_budget: "no real budget / can't pay / tiny budget",
-    deferred_interest: "interested but explicitly deferring (maybe later)",
-    price_sensitive: "emphasizes price sensitivity",
-    budget_not_committed: "budget unlocked/undisclosed/contingent",
-    no_clear_authority: "unclear who signs off, or needs to loop in others to decide",
-    vague_scope: "doesn't know what they need; vague on scope",
-  };
-
-  const SYSTEM = `/no_think
-
-You classify inbound sales leads for an AI-automation agency whose core customers are marketing/growth agencies. For each numbered note, decide:
-
-1. "category" — exactly one of:
-${E.GATE_NAMES.map(g => `   - "${g}": clearly not a buyer of this kind`).join("\n")}
-   - "prospect": a potential buyer (any genuine commercial interest, even weak)
-   Only use a non-prospect category when the note clearly fits it. When unsure, use "prospect".
-
-2. "signals" — for prospects only, every signal genuinely supported by the note's meaning (not just literal phrasing). For non-prospects return []. Signals:
-${SIGNAL_NAMES.map(k => `   - "${k}": ${SIGNAL_MEANINGS[k]}`).join("\n")}
-
-Return one result per input, with "index" echoing the input's number. Reply with a single JSON object shaped {"results": [{"index": 0, "category": "...", "signals": ["..."]}, …]} — no prose, no code fences.`;
-
-  const SCHEMA = {
-    type: "object",
-    properties: {
-      results: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            index: { type: "integer" },
-            category: { type: "string", enum: CATEGORIES },
-            signals: { type: "array", items: { type: "string", enum: SIGNAL_NAMES } },
-          },
-          required: ["index", "category", "signals"],
-          additionalProperties: false,
-        },
-      },
-    },
-    required: ["results"],
-    additionalProperties: false,
-  };
-
-  function routeFor(apiKey) {
-    return apiKey.startsWith("nvapi-")
-      ? { url: NIM_PROXY_URL, nim: true }
-      : { url: OPENROUTER_URL, nim: false };
-  }
-
-  /* ---------------- response parsing ----------------
-   * Open models don't always honor the schema: they wrap output in <think>
-   * blocks or code fences, and over a long batch some get lazy and write a
-   * placeholder ("…, ... etc. ]") instead of finishing the list. A single
-   * whole-document JSON.parse turns any of that into a total loss for all
-   * notes in the batch, so parsing is salvage-based: take the clean parse when
-   * it works, otherwise recover every individual result object that is valid.
-   * Whatever is missing simply keeps its regex result downstream. */
-
-  const CATEGORY_SET = new Set(CATEGORIES);
-  const SIGNAL_SET = new Set(SIGNAL_NAMES);
-
-  function isResult(o) {
-    return o && typeof o === "object" && Number.isInteger(o.index) && typeof o.category === "string";
-  }
-
-  /* Normalize one model result, dropping anything the catalog doesn't define. */
-  function cleanResult(o) {
-    return {
-      index: o.index,
-      category: CATEGORY_SET.has(o.category) ? o.category : "prospect",
-      signals: Array.isArray(o.signals) ? o.signals.filter(s => SIGNAL_SET.has(s)) : [],
-    };
-  }
-
-  /* Index of the `}` closing the `{` at `start`, or -1 if unterminated. */
-  function matchBrace(s, start) {
-    let depth = 0, inStr = false, esc = false;
-    for (let i = start; i < s.length; i++) {
-      const c = s[i];
-      if (esc) { esc = false; continue; }
-      if (c === "\\") { esc = true; continue; }
-      if (c === '"') { inStr = !inStr; continue; }
-      if (inStr) continue;
-      if (c === "{") depth++;
-      else if (c === "}" && --depth === 0) return i;
-    }
-    return -1;
-  }
-
-  function extractResults(text) {
-    const cleaned = text
-      .replace(/<think>[\s\S]*?<\/think>/g, "")
-      .replace(/<think>[\s\S]*$/, "");          // unterminated reasoning block
-
-    const first = cleaned.indexOf("{");
-    if (first < 0) return [];
-
-    // Fast path: the whole document parses (schema was honored).
-    try {
-      const whole = JSON.parse(cleaned.slice(first, cleaned.lastIndexOf("}") + 1));
-      if (Array.isArray(whole.results)) return whole.results.filter(isResult).map(cleanResult);
-    } catch { /* fall through to salvage */ }
-
-    // Salvage: recover each well-formed object, skipping prose and truncation.
-    const out = [];
-    for (let i = first; i >= 0; i = cleaned.indexOf("{", i + 1)) {
-      const end = matchBrace(cleaned, i);
-      if (end < 0) continue;                     // unterminated here (e.g. the cut-off wrapper) — try the next object
-      let obj;
-      try { obj = JSON.parse(cleaned.slice(i, end + 1)); } catch { continue; }
-      if (Array.isArray(obj.results)) { out.push(...obj.results.filter(isResult).map(cleanResult)); i = end; }
-      else if (isResult(obj)) { out.push(cleanResult(obj)); i = end; }
-    }
-    return out;
-  }
-
-  /* `noSchema` re-runs without the structured-output request, for the rare
-   * provider that rejects the parameter outright instead of ignoring it. */
-  async function classifyBatch(apiKey, model, batch, attempt = 0, noSchema = false) {
-    const route = routeFor(apiKey);
-    const bare = model.replace(/:free$/, "");
-    const body = {
-      model: route.nim ? bare : model,
-      max_tokens: 8000,
-      temperature: 0,
-      messages: [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: batch.map(b => `${b.index}. ${b.notes || "(empty)"}`).join("\n") },
-      ],
-    };
-    // Ask for guided decoding on every model: NVIDIA's NIM enforces it for
-    // everything it serves, and OpenRouter ignores the parameter where the
-    // provider can't honor it — so requesting it can only help.
-    if (route.nim) body.nvext = { guided_json: SCHEMA };
-    else if (!noSchema)
-      body.response_format = { type: "json_schema", json_schema: { name: "triage_results", strict: true, schema: SCHEMA } };
-
-    let res;
-    try {
-      res = await fetch(route.url, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify(body),
-      });
-    } catch {
-      throw new Error(route.nim
-        ? "Could not reach the /nim/ proxy. NVIDIA keys (nvapi-…) need the Docker self-host (docker compose up), which proxies NVIDIA's CORS-blocked API — or use an OpenRouter key (sk-or-…), which works from anywhere."
-        : "Could not reach openrouter.ai. If you're viewing the hosted demo: it blocks external requests by design — run the self-hosted or local version for AI mode. Otherwise check your connection.");
-    }
-    if (route.nim && res.status === 404)
-      throw new Error("This server has no /nim/ proxy, so NVIDIA keys (nvapi-…) won't work here. Use the Docker self-host (docker compose up) — or an OpenRouter key (sk-or-…), which works from anywhere.");
-    if (res.status === 401 || res.status === 403)
-      throw new Error(`API key rejected (${res.status}). Check the key and try again.`);
-    if (res.status === 429) {
-      if (attempt < 3) {
-        const wait = (parseInt(res.headers.get("retry-after"), 10) || 15) * 1000;
-        await new Promise(r => setTimeout(r, wait));
-        return classifyBatch(apiKey, model, batch, attempt + 1);
-      }
-      throw new Error("Rate limited (429) after 3 retries — free tiers cap requests per minute and per day. Wait a few minutes and re-run, or switch to a paid model slug (drop the \":free\" suffix).");
-    }
-    if (res.status >= 500 && attempt < 2) {
-      await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
-      return classifyBatch(apiKey, model, batch, attempt + 1);
-    }
-    if (!res.ok) {
-      const err = await res.json().catch(() => null);
-      const msg = err?.error?.message || err?.detail || res.statusText;
-      // Some providers reject response_format rather than ignoring it — drop it and retry once.
-      if (res.status === 400 && !noSchema && /response_format|json_schema|structured/i.test(msg || ""))
-        return classifyBatch(apiKey, model, batch, attempt, true);
-      throw new Error(`API error ${res.status}: ${msg}`);
-    }
-
-    const data = await res.json();
-    const text = data.choices?.[0]?.message?.content;
-    if (!text) throw new Error("Empty response from the model.");
-    return extractResults(text);
-  }
-
-  /* Classify one batch into `detections`. A model that skipped some notes gets
-   * asked again for just those, in smaller chunks — laziness scales with batch
-   * size, so a shorter re-ask usually lands. */
-  async function classifyInto(apiKey, model, batch, detections, depth = 0) {
-    const results = await classifyBatch(apiKey, model, batch);
-    const got = new Set();
-    for (const r of results) {
-      if (r.index >= 0 && r.index < detections.length) {
-        detections[r.index] = { category: r.category, signals: r.signals };
-        got.add(r.index);
-      }
-    }
-    const missing = batch.filter(b => !got.has(b.index));
-    if (missing.length && batch.length > 1 && depth < 2) {
-      const half = Math.ceil(missing.length / 2);
-      await classifyInto(apiKey, model, missing.slice(0, half), detections, depth + 1);
-      if (missing.length > half)
-        await classifyInto(apiKey, model, missing.slice(half), detections, depth + 1);
-    }
-  }
-
-  /* Classify every lead's notes; returns a detections array aligned with `leads`.
-   * Entries left undefined keep their regex result, so a partial run still works.
-   * onProgress(done, total) fires after each batch. */
-  async function detectWithAI(apiKey, model, leads, onProgress) {
-    const detections = new Array(leads.length);
-    const items = leads.map((l, i) => ({ index: i, notes: l.notes }));
-    for (let off = 0; off < items.length; off += BATCH) {
-      await classifyInto(apiKey, model, items.slice(off, off + BATCH), detections);
-      onProgress?.(Math.min(off + BATCH, items.length), items.length);
-    }
-    return detections;
-  }
-
-  root.TriageAI = { detectWithAI };
-})(window);
 </script>
 <script>
 /* Triage — UI layer. Rendering and wiring only; all logic lives in engine.js. */
@@ -1005,8 +764,6 @@ Return one result per input, with "index" echoing the input's number. Reply with
   const TIERS = ["CONTACT_NOW", "NURTURE", "DISQUALIFY"];
 
   let state = null, filterTier = "ALL", query = "", showAll = false, sourceName = "";
-  let scoringMode = "regex"; // "regex" | "ai"
-  let aiCoverage = null;     // {covered, total} once AI mode has run
 
   /* ---------------- rendering ---------------- */
 
@@ -1016,13 +773,7 @@ Return one result per input, with "index" echoing the input's number. Reply with
     for (const t of TIERS) counts[t] = leads.filter(l => l.tier === t).length;
     const total = leads.length || 1;
 
-    $("runmeta").textContent = `${sourceName} · ${inputRows} rows · ${leads.length} leads scored` +
-      (scoringMode === "ai" ? " · AI-assisted" : "");
-    $("ai-state").textContent =
-      scoringMode !== "ai" ? "built-in detector active"
-      : aiCoverage && aiCoverage.covered < aiCoverage.total
-        ? `AI detector active ✓ — ${aiCoverage.covered} of ${aiCoverage.total} leads; the rest kept the built-in result`
-        : "AI detector active ✓";
+    $("runmeta").textContent = `${sourceName} · ${inputRows} rows · ${leads.length} leads scored`;
 
     $("hero-n").textContent = counts.CONTACT_NOW;
     $("hero-sub").textContent =
@@ -1144,50 +895,12 @@ Return one result per input, with "index" echoing the input's number. Reply with
   function load(rawRows, name) {
     sourceName = name;
     state = E.runPipeline(rawRows);
-    filterTier = "ALL"; query = ""; showAll = false; scoringMode = "regex"; aiCoverage = null;
+    filterTier = "ALL"; query = ""; showAll = false;
     $("search").value = "";
-    $("ai-error").hidden = true;
     render();
     window.scrollTo({ top: 0 });
   }
 
-  /* ---------------- AI mode ---------------- */
-
-  $("btn-ai").onclick = async () => {
-    if (!state) return;
-    const key = $("ai-key").value.trim();
-    const errBox = $("ai-error");
-    errBox.hidden = true;
-    if (!key) { errBox.textContent = "Paste an OpenRouter (sk-or-…) or NVIDIA (nvapi-…) API key first."; errBox.hidden = false; return; }
-
-    const btn = $("btn-ai");
-    btn.disabled = true;
-    $("ai-progress").hidden = false;
-    $("ai-bar").style.width = "0%";
-    $("ai-progress-text").textContent = `Classifying 0 / ${state.leads.length} leads…`;
-    try {
-      const detections = await window.TriageAI.detectWithAI(
-        key, $("ai-model").value, state.leads,
-        (done, total) => {
-          $("ai-bar").style.width = (done / total * 100) + "%";
-          $("ai-progress-text").textContent = `Classifying ${done} / ${total} leads…`;
-        });
-      const covered = detections.filter(Boolean).length;
-      if (!covered)
-        throw new Error("The model returned nothing usable for any batch. Try a different model, or keep the built-in detector.");
-      E.rescoreWithDetections(state.leads, detections);
-      scoringMode = "ai";
-      aiCoverage = { covered, total: state.leads.length };
-      showAll = false;
-      render();
-    } catch (e) {
-      errBox.textContent = e.message;
-      errBox.hidden = false;
-    } finally {
-      btn.disabled = false;
-      $("ai-progress").hidden = true;
-    }
-  };
   function loadFile(f) { f.text().then(t => load(E.parseCSV(t), f.name)); }
 
   $("btn-demo").onclick = () => load(window.DEMO_DATA, "cohort_3_leads.csv");

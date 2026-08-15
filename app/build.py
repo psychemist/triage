@@ -17,7 +17,7 @@ html = re.sub(r"</head>\s*<body>\s*", "\n", html, flags=re.S)
 html = re.sub(r"\s*</body>\s*</html>\s*$", "\n", html, flags=re.S)
 
 html = html.replace("</title>", "</title>\n<style>\n" + (root / "styles.css").read_text() + "</style>")
-for src in ["demo-data.js", "engine.js", "ai.js", "app.js"]:
+for src in ["demo-data.js", "engine.js", "app.js"]:
     js = (root / src).read_text().replace("</script>", "<\\/script>")
     html = html.replace(f'<script src="{src}"></script>', "<script>\n" + js + "</script>")
 

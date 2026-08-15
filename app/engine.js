@@ -6,38 +6,107 @@
    * The single source of truth for qualification signals. */
 
   const GATES = {
-    "spam":              [/won \$/, /click here to claim/, /smm panel/, /buy followers/, /backlinks/, /bulk email blasting/, /offshore dev/, /dm for rates/],
-    "job seeker":        [/looking for a role/, /attaching my cv/, /are you hiring/, /join your team/],
-    "recruiter":         [/place candidates/, /devs on our bench/],
-    "student / learner": [/\bstudent\b/, /bootcamp grad/, /university project/, /free (template|material|resources)/, /just learning/],
-    "press / VC":        [/journalist/, /looking for a quote/, /\bvc here\b/, /not a (direct )?buyer/],
-    "competitor":        [/competing automation agency/, /benchmark/, /fellow agency owner/, /researching the market/, /we do similar work/],
-    "test row":          [/test entry/, /test test ignore/, /newsletter signup/],
-    "low budget":    [/can't really pay/, /tiny budget/, /budget way below range/],
+    "spam": [
+      /won \$|you have won|claim your (prize|reward)|congratulations,? you/,
+      /click here|limited time offer|act now|make money fast|work from home/,
+      /smm panel|buy (followers|likes|traffic)|cheap traffic|social media boost/,
+      /backlinks|high.?da links|guaranteed (rank|first page)|rank #?\d+ guaranteed/,
+      /bulk email blasting|mass mailer|email blast service|scraped (list|leads) for sale/,
+      /offshore (dev|team|developers)|dedicated developers at|staff augmentation|\$\d+\/hr/,
+      /dm for rates|crypto|bitcoin|forex|lottery|inheritance|wire transfer/,
+    ],
+    "job seeker": [
+      /looking for a (role|job|position)|seeking (a )?(role|position|employment)|open to work/,
+      /attaching my (cv|resume)|my (cv|resume) is attached|resume attached|here'?s my cv/,
+      /are you hiring|any (openings|vacancies)|join your team|apply for a (job|role)/,
+      /hire me|available for hire|looking for work|internship/,
+    ],
+    "recruiter": [
+      /place candidates|candidates for you|our bench|devs on (our|the) bench/,
+      /staffing agency|recruiting firm|headhunt|talent pool|we supply (developers|talent)/,
+    ],
+    "student / learner": [
+      /\bstudent\b|bootcamp grad|final year|freshman|undergrad|postgrad/,
+      /university project|school project|class project|thesis|dissertation|coursework|academic research/,
+      /free (template|material|materials|resources|course|guide)|any free/,
+      /just learning|learning purposes|teach me|mentor me|how did you (build|make)|share how you built/,
+    ],
+    "press / VC": [
+      /journalist|reporter|writing (an article|a piece|a story)|press inquiry|media inquiry/,
+      /looking for a quote|for our publication|blog post about|feature you|on our podcast/,
+      /\bvc here\b|venture capital|angel investor|portfolio compan|due diligence/,
+      /not a (direct )?buyer|not a client|not looking to buy/,
+    ],
+    "competitor": [
+      /competing (automation )?agency|competitor|rival agency|we run a similar|also an automation agency/,
+      /benchmark|fellow agency owner|researching the market|market research|scoping the competition/,
+      /we do similar work|we offer the same|curious how you price for comparison/,
+    ],
+    "test row": [
+      /test entry|test test|qa test|please ignore|ignore this|dummy (data|entry|row)/,
+      /sample row|placeholder|lorem ipsum|^\s*(test|asdf|xxx)\s*$/,
+      /newsletter signup|mailing list signup|subscribed by mistake/,
+    ],
+    "low budget": [
+      /can'?t really pay|can ?not afford|can'?t afford|too expensive for us/,
+      /tiny budget|shoestring|no budget at all|zero budget|budget way below range/,
+      /out of our (price )?range|below our range|way out of budget/,
+      /looking for (something )?free|free (option|version|tier|plan)|pro bono|only if it'?s free/,
+    ],
   };
 
   const SIGNALS = {
-    budget_approved:      { pts: 20,  label: "budget approved",       re: /budget approved/ },
-    urgent_timeline:      { pts: 18,  label: "urgent timeline",       re: /asap|move fast|start this month|decision this month|pilot in the next|in \d+ weeks|priority for the quarter/ },
-    acute_pain:           { pts: 15,  label: "acute pain named",      re: /eating our week/ },
-    wants_full_automation:{ pts: 12,  label: "wants full automation", re: /end to end/ },
-    decision_maker:       { pts: 10,  label: "decision-maker",        re: /decision is mine|i make the call|my priority to solve/ },
-    active_evaluation:    { pts: 8,   label: "active evaluation",     re: /comparing a few options/ },
-    decision_month:       { pts: 6,   label: "decision ~1 month",     re: /decision in about a month/ },
-    has_some_budget:      { pts: 5,   label: "has some budget",       re: /have some budget|budgeted/ },
-    named_workflow:       { pts: 4,   label: "named a workflow",      re: /automat/ },
-    no_clear_authority:   { pts: -1,  label: "no clear authority",    re: /who signs off|loop in the team/ },
-    budget_not_committed: { pts: -2,  label: "budget not committed",  re: /budget not locked|won'?t share budget|wont share budget|no real budget/ },
-    price_sensitive:      { pts: -4,  label: "price sensitive",       re: /price sensitive/ },
-    vague_scope:          { pts: -6,  label: "vague on scope",        re: /not totally sure what we need|vague on scope|not sure what we need/ },
-    deferred_interest:    { pts: -10, label: "deferred interest",     re: /maybe later/ },
+    budget_approved: { pts: 20, label: "budget approved", re:
+      /budget (is )?approved|approved budget|budget (secured|confirmed|in place|allocated)|allocated budget|we have the budget|funding (is )?approved|signed off on (the )?budget|sign.?off on (spend|budget)|have sign.?off/ },
+    urgent_timeline: { pts: 18, label: "urgent timeline", re:
+      /asap|urgent|right away|immediately|move fast|moving fast|start (this|next) month|start now|decision this month|pilot in the next|in \d+ weeks|priority for the quarter|this quarter|time.sensitive|need this (done )?(by|before)|kick.?off (this|next) month/ },
+    acute_pain: { pts: 15, label: "acute pain named", re:
+      /eating (up )?(our|the) (week|time|days|hours)|wasting (hours|time|days)|burning (hours|time)|takes (us )?(hours|days)|too much time|time.consuming|tedious|manual(ly)?.{0,25}(every|each) (day|week)|drowning in|swamped|bottleneck|can'?t keep up|falling behind|nightmare|painful/ },
+    wants_full_automation: { pts: 12, label: "wants full automation", re:
+      /end.to.end|fully automated?|full automation|completely automated?|hands.off|automate the whole|entire (process|workflow)|from start to finish|without (any )?manual|no manual/ },
+    decision_maker: { pts: 10, label: "decision-maker", re:
+      /decision is mine|i make the call|my priority to solve|my decision|i decide|i sign off|i can approve|final say|i own (this|the budget)|i'?m the (owner|founder|ceo|decision.maker)/ },
+    active_evaluation: { pts: 8, label: "active evaluation", re:
+      /comparing (a few |several |multiple )?(options|vendors|tools|providers|solutions)|evaluating (a few|several|options|vendors|tools)|shortlist|looking at alternatives|getting quotes|\brfp\b|request for proposal|in talks with|demos? with/ },
+    decision_month: { pts: 6, label: "decision ~1 month", re:
+      /decision (in|within) (about )?a (month|few weeks)|deciding (this|next) month|decide (in|within).{0,12}(month|weeks)|timeline is.{0,15}month/ },
+    has_some_budget: { pts: 5, label: "has some budget", re:
+      /have some budget|some budget|budgeted|budget exists|funds available|money set aside|allocated some/ },
+    named_workflow: { pts: 4, label: "named a workflow", re:
+      /automat|streamline|workflow|manual process|copy.?past|data entry|integrat|sync (between|with)/ },
+    no_clear_authority: { pts: -1, label: "no clear authority", re:
+      /who signs off|loop in the team|need to (check|ask|run it by|consult)|not sure who (decides|signs)|team decision|committee|get approval|internal buy.?in|my (boss|manager|partner) (would|will|needs)/ },
+    budget_not_committed: { pts: -2, label: "budget not committed", re:
+      /budget not locked|won'?t share budget|wont share budget|depends what you can do|budget (is )?tbd|haven'?t (set|decided).{0,12}budget|budget (undecided|not set|not decided)|need to figure out budget/ },
+    price_sensitive: { pts: -4, label: "price sensitive", re:
+      /price.sensitive|cost.conscious|cheapest|lowest price|budget.friendly|what do you charge|how much (does it|do you) cost|discount|negotiate on price/ },
+    vague_scope: { pts: -6, label: "vague on scope", re:
+      /not totally sure what we need|not sure what (we need|exactly)|vague on scope|don'?t know what we (need|want)|still figuring (it )?out|just exploring|not sure where to start|open to ideas|early research/ },
+    deferred_interest: { pts: -10, label: "deferred interest", re:
+      /maybe later|later this year|next year|not right now|not at the moment|circle back|revisit (in|next|later)|touch base (in|later)|down the (road|line)|in a few months|keep me posted/ },
   };
+
+  const NURTURE_FLOOR = [
+    /early.stage|early startup|very early|early days|just (got )?started|starting out|new (agency|business)/,
+    /pre.?revenue|pre.?seed|bootstrapp?ed|no real budget yet|budget (next|by next) (quarter|year)/,
+    /might grow|but sharp|small but growing|growing fast|scaling up|plan to scale/,
+    /too early (for us|right now)|not ready (yet|to buy)|revisit when we (grow|scale)/,
+  ];
+
+  const RESCUABLE_GATES = new Set(["low budget"]);
+
+  function hasNurtureFloor(notes) {
+    return NURTURE_FLOOR.some(re => re.test(notes));
+  }
 
   /* Regex detector
    * Returns { category, signals: [names] }; category "prospect" means scoreable. */
   function detectSignals(notes) {
     for (const [category, pats] of Object.entries(GATES)) {
-      if (pats.some(p => p.test(notes))) return { category, signals: [] };
+      if (pats.some(p => p.test(notes))) {
+        if (RESCUABLE_GATES.has(category) && hasNurtureFloor(notes)) continue;
+        return { category, signals: [] };
+      }
     }
     return {
       category: "prospect",
@@ -52,6 +121,7 @@
     "managing partner": 10, "partner": 8, "cto": 8, "vp growth": 8, "vp ops": 8,
     "head of ops": 8, "head of growth": 8, "head of revops": 8, "director of ops": 6,
     "director of growth": 6, "director of revops": 6, "marketing manager": 4,
+    "operations manager": 4, "growth manager": 4, "revops manager": 4,
     "consultant": 2, "freelancer": 0, "developer": -5, "student": -10, "recruiter": -10,
   };
   const SOURCE_PTS = { referral: 8, event: 5, linkedin: 4, webform: 2, "cold reply": 1 };
@@ -96,15 +166,15 @@
   /* Reasons are structured: { pts, label, group } — group is "intent" | "fit" | "gate".
    * pts === null means an informational flag with no numeric weight. */
 
-  /* Score a lead from a detection result ({category, signals}) — the shared
-   * back half used by both detectors. `via` tags reasons with their detector. */
-  function scoreFromDetection(lead, detection, via) {
+  /* Score a lead from a detection result ({category, signals}). */
+  function scoreFromDetection(lead, detection) {
     const notes = (lead.notes || "").toLowerCase();
-    const tag = via === "ai" ? " (AI)" : "";
 
-    if (detection.category !== "prospect")
+    const rescued = detection.category !== "prospect"
+      && RESCUABLE_GATES.has(detection.category) && hasNurtureFloor(notes);
+    if (detection.category !== "prospect" && !rescued)
       return { score: 0, intent: 0, fit: 0, tier: "DISQUALIFY", category: detection.category,
-               reasons: [{ pts: null, label: "hard disqualifier: " + detection.category + tag, group: "gate" }] };
+               reasons: [{ pts: null, label: "hard disqualifier: " + detection.category, group: "gate" }] };
     if (!notes.trim())
       return { score: 0, intent: 0, fit: 0, tier: "DISQUALIFY", category: "no information",
                reasons: [{ pts: null, label: "empty notes — nothing to qualify on", group: "gate" }] };
@@ -115,7 +185,7 @@
       const s = SIGNALS[name];
       if (!s) continue;
       intent += s.pts;
-      reasons.push({ pts: s.pts, label: s.label + tag, group: "intent" });
+      reasons.push({ pts: s.pts, label: s.label, group: "intent" });
     }
     intent = Math.max(0, Math.min(60, intent));
 
@@ -143,25 +213,19 @@
 
     const score = intent + fit;
     if (!lead.email) reasons.push({ pts: null, label: "no valid e-mail — capped at Nurture until fixed", group: "gate" });
-    const tier = (score >= 60 && lead.email) ? "CONTACT_NOW" : score >= 14 ? "NURTURE" : "DISQUALIFY";
+
+    const floored = hasNurtureFloor(notes);
+    if (floored && score < 14)
+      reasons.push({ pts: null, label: "early-stage — kept for nurture rather than disqualified", group: "gate" });
+    const tier = (score >= 60 && lead.email) ? "CONTACT_NOW"
+               : (score >= 14 || floored)    ? "NURTURE"
+               : "DISQUALIFY";
     const category = tier === "DISQUALIFY" ? "low intent / poor fit" : "prospect";
     return { score, intent, fit, tier, category, reasons };
   }
 
   function scoreLead(lead) {
-    return scoreFromDetection(lead, detectSignals((lead.notes || "").toLowerCase()), "regex");
-  }
-
-  /* Re-score already-cleaned leads with external detections (the AI path).
-   * `detections[i]` pairs with `leads[i]`; missing entries keep the regex result. */
-  function rescoreWithDetections(leads, detections) {
-    leads.forEach((lead, i) => {
-      if (detections[i]) Object.assign(lead, scoreFromDetection(lead, detections[i], "ai"));
-    });
-    const order = { CONTACT_NOW: 0, NURTURE: 1, DISQUALIFY: 2 };
-    leads.sort((a, b) => order[a.tier] - order[b.tier] || b.score - a.score);
-    leads.forEach((l, i) => l.rank = i + 1);
-    return leads;
+    return scoreFromDetection(lead, detectSignals((lead.notes || "").toLowerCase()));
   }
 
   /* ---------------- CSV parsing + column auto-detection ---------------- */
@@ -256,7 +320,7 @@
   }
 
   const api = { runPipeline, parseCSV, scoreLead, toCSV, reasonText,
-                detectSignals, scoreFromDetection, rescoreWithDetections,
+                detectSignals, scoreFromDetection,
                 SIGNALS, GATE_NAMES: Object.keys(GATES) };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.TriageEngine = api;

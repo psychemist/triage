@@ -206,38 +206,6 @@ button:focus-visible, input:focus-visible, tr:focus-visible { outline: 2px solid
 .waterfall .wf.flag .k { color: var(--warn-text); }
 .waterfall .wf.flag .v { color: var(--warn-text); }
 
-/* ------------------------------------------------ AI panel */
-
-.ai-panel { margin-bottom: 18px; padding: 0; }
-.ai-panel summary {
-  display: flex; align-items: baseline; gap: 12px; cursor: pointer;
-  padding: 14px 18px; list-style: none;
-}
-.ai-panel summary::-webkit-details-marker { display: none; }
-.ai-panel summary::before { content: "▸"; color: var(--muted); font-size: 12px; }
-.ai-panel[open] summary::before { content: "▾"; }
-.ai-panel summary .microlabel { margin: 0; }
-.ai-state { margin-left: auto; font-size: 12.5px; color: var(--ink-2); }
-.ai-blurb { margin: 0 18px 14px; color: var(--ink-2); font-size: 13.5px; max-width: 78ch; }
-.ai-controls { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 18px 16px; }
-#ai-key {
-  flex: 2; min-width: 220px; padding: 9px 12px; border-radius: 8px;
-  border: 1px solid var(--ring); background: var(--page); color: var(--ink);
-  font: 13px/1 ui-monospace, Menlo, monospace;
-}
-#ai-model {
-  flex: 1; min-width: 220px; padding: 9px 10px; border-radius: 8px;
-  border: 1px solid var(--ring); background: var(--surface); color: var(--ink);
-  font: 600 13.5px system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-.ai-progress { display: flex; align-items: center; gap: 12px; padding: 0 18px 16px; }
-.ai-progress .sigmeter { flex: 1; margin: 0; }
-.ai-progress span { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.ai-error {
-  margin: 0 18px 16px; padding: 9px 12px; border-radius: 8px;
-  background: var(--dq-wash); color: var(--crit-text); font-size: 13px; font-weight: 600;
-}
-
 /* ------------------------------------------------ controls + table */
 
 .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
