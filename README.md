@@ -1,4 +1,4 @@
-# Triage — automated lead qualification
+# Triage — Automated Lead Qualification
 
 Takes a raw lead export (messy is fine), cleans it, reads every lead's notes,
 scores **intent** (0–60) and **fit** (0–40), and ranks the whole pipeline into
